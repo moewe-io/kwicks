@@ -62,7 +62,7 @@
 						throw new Error('Invalid value for Kwicks option ' + prop + ': ' + val);
 				}
 			});
-						
+
 			return this.each(function() {
 				$(this).data('kwicks', new Kwick(this, o));
 			});
@@ -74,7 +74,7 @@
 			}
 
 			var delay = opts && opts.delay || 0;
-			
+
 			return this.each(function() {
 				var $this = $(this),
 					kwick = $this.data('kwicks');
@@ -128,7 +128,7 @@
 			return this.each(function() {
 				var $this = $(this),
 					kwick = $this.data('kwicks');
-				
+
 				// assume this is the container
 				if (kwick) {
 					index = typeof index === 'number' ? index : -1;
@@ -228,6 +228,8 @@
 
 		this.opts = opts;
 
+		this.customPanelMaxSize = null;
+
 		// an array of callbacks to invoke if 'destroy' is invoked
 		this.onDestroyHandlers = [];
 
@@ -308,11 +310,11 @@
 		this.panelSize = sumPanelSize / numPanels;
 
 		if (opts.minSize === -1) {
+
 			if (opts.maxSize === -1) {
 				// if neither minSize or maxSize or set, then we try to pick a sensible default
 				if (numPanels < 5) {
 					this.panelMaxSize = containerSize / 3 * 2;
-				} else {
 					this.panelMaxSize = containerSize / 3;
 				}
 			} else if (opts.maxSizeUnits === '%') {
@@ -334,6 +336,11 @@
 			// at this point we know that this.panelMinSize is set
 			this.panelMaxSize = sumPanelSize - (this.panelMinSize * (numPanels - 1));
 		}
+
+		if( this.customPanelMaxSize  != null && this.panelMaxSize > this.customPanelMaxSize ) {
+			this.panelMaxSize = this.customPanelMaxSize;
+			this.panelMinSize = (sumPanelSize - this.panelMaxSize) / (numPanels - 1);
+		}
 	};
 
 	/**
@@ -341,6 +348,17 @@
 	 */
 	Kwick.prototype.getOffsetsForExpanded = function() {
 		// todo: cache the offset values
+
+		var $expandedPanel = $(this.getExpandedPanel());
+		if( $expandedPanel.size() == 1
+				&& $expandedPanel.data( "panelMaxSize" ) != null ) {
+			this.customPanelMaxSize = $expandedPanel.data( "panelMaxSize" );
+			this.calculatePanelSizes();
+		} else if( this.customPanelMaxSize != null ) {
+			this.customPanelMaxSize = null;
+			this.calculatePanelSizes();
+		}
+
 		var expandedIndex = this.expandedIndex,
 			numPanels = this.$panels.length,
 			spacing = this.panelSpacing,
@@ -478,7 +496,7 @@
 		var self = this,
 			numSlides = this.$panels.length,
 			curSlide = 0,
-			// flag to handle weird corner cases
+		// flag to handle weird corner cases
 			running = false,
 			intervalId;
 
@@ -660,7 +678,7 @@
 	 */
 	Kwick.prototype.expand = function(index) {
 		var self = this,
-			// used for expand-complete event later on
+		// used for expand-complete event later on
 			oldIndex = this.expandedIndex,
 			oldExpanded = this.getExpandedPanel();
 
